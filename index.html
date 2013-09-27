@@ -2,22 +2,23 @@
 <html>
   <head>
     <title>Fwilstatus</title>
-    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans:100italic,400italic,700italic,100,400,700" />
-    <link rel="stylesheet" type="text/css" href="https://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css" />
-    <link rel="stylesheet" type="text/css" href="https://iodine.tjhsst.edu/ion.git/?p=intranet3.git;a=blob_plain;f=intranet/static/css/base.css;hb=HEAD" />
+    <!--link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans:100italic,400italic,700italic,100,400,700" /-->
+    <link rel="stylesheet" type="text/css" href="fontawesome/css/font-awesome.css" />
+    <link rel="stylesheet" type="text/css" href="base.css" />
     <style type="text/css">
 body {
   font-family: 'Open Sans';
   background-color: #f0f0f0;
 }
-.large-nav-buttons {
-    display: block;
+/* nav buttons */
+.nav-buttons {
+    display: table;
     position: absolute;
-    
-    width: 328px; height: 248px;
+    // 396
+    width: 656px; height: 370px;
     
     left: 50%;
-    margin-left: -164px;
+    margin-left: -328px;
     margin-top: 5%;
 
   border: 1px solid rgb(216, 216, 216);
@@ -31,81 +32,212 @@ body {
   behavior: url("/static/js/PIE/PIE.htc");
 }
 
-.large-nav-buttons td {
+.nav-buttons .col {
+  display: table-row;
+  height: 105px;
+}
+
+.nav-buttons .item {
   /*border: 1px solid rgb(216, 216, 216);
   margin: -1px -1px -1px -1px;*/
-  padding: 10px 25px;
+  padding: 20px 50px;
+  display: table-cell;
 }
 
-.large-nav-buttons a {
+.nav-buttons a {
   text-decoration: none;
   color: rgb(169,169,169);
+  font-size: 24px;
 }
 
-.large-nav-buttons a:hover {
+.nav-buttons a:hover,
+.nav-buttons .item a.sel,
+.nav-buttons.sel a {
   text-decoration: none;
   color: rgb(72,72,72);
 }
 
-.large-nav-buttons i {
+.nav-buttons i {
   display: block;
-  width: 56px;
-  height: 56px;
+  width: 112px;
+  height: 112px;
   margin-left: auto;
   margin-right: auto;
+
+  font-size: 4em;
+}
+
+.nav-buttons .back {
+  display: none;
+}
+
+.nav-buttons.min .back {
+  display: table-cell;
 }
 
 
+.nav-buttons.min {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin-top: 0;
+  margin-left: 0;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgb(216, 216, 216);
+  border-radius: 0;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  height: 105px;
+}
+
+.nav-buttons.min i {
+  width: 56px;
+  height: 56px;
+}
+
+.nav-buttons.min a {
+  font-size: 12px;
+}
+
+.nav-buttons.min .col {
+  display: inline !important;
+}
+
+.nav-buttons.min .item {
+  padding: 20px 35px;
+  display: inline-block;
+}
+
+/* content */
+.content div {
+  display: none;
+  position: absolute;
+  top: 15%;
+  left: 0;
+  width: 90%;
+  height: 85%;
+  padding: 0 5% 0 5%;
+}
     </style>
+
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript">
+$(document).ready(function() {
+  inits = {
+    'vms': function() {
+      console.log('do initialization here');
+    }
+  };
+  
+  move = function(loc) {
+    $n = $('.nav-buttons');
+    $c = $('.content');
+    if(loc == '') {
+      $n.removeClass('min');
+      $c.hide();
+    } else {
+      $n.addClass('min');
+      $c.show();
+      $('.content div').removeClass('sel')
+                       .hide();
+      $('.content .'+loc).addClass('sel')
+                         .show();
+      i = inits[loc];
+      if(typeof i == 'function') i();
+    }
+
+  }
+
+  sel = function(obj) {
+    $('.nav-buttons .sel').removeClass('sel');
+    $(obj).addClass('sel');
+  }
+
+  $('.item a').click(function(e) {
+    loc = $(this).attr('href');
+    move(loc);
+    sel($(this));
+    e.preventDefault();
+  })
+});
+    </script>
   </head>
   <body>
     <div class="container">
-      <table class="large-nav-buttons">
-            <tr>
-                <td class="ni">
-                <a href="vms">
-                    <i class="icon-map-marker icon-4x"></i>
-                    VMs
-                </a>
-                </td>
+      <div class="nav-buttons">
+        <div class="col">
+            <div class="item back">
+            <a href="">
+              <i class="icon-home"></i>
+              Home
+            </a>
+            </div>
+            <div class="item ni">
+            <a href="vms">
+                <i class="icon-map-marker"></i>
+                VMs
+            </a>
+            </div>
 
-                <td class="ip">
-                <a href="criticals">
-                    <i class="icon-warning-sign icon-4x"></i>
-                    Criticals
-                </a>
-                </td>
+            <div class="item ip">
+            <a href="criticals">
+                <i class="icon-warning-sign"></i>
+                Criticals
+            </a>
+            </div>
 
-                <td class="ni">
-                <a href="workstations">
-                    <i class="icon-laptop icon-4x"></i>
-                    Workstations
-                </a>
-                </td>
-            </tr>
-            <tr>
-                <td class="ni">
-                <a href="iodine">
-                    <i class="icon-home icon-4x"></i>
-                    Iodine
-                </a>
-                </td>
+            <div class="item ni">
+            <a href="workstations">
+                <i class="icon-laptop"></i>
+                Workstations
+            </a>
+            </div>
+        </div>
+        <div class="col">
+          <div class="item ni">
+          <a href="iodine">
+              <i class="icon-home"></i>
+              Iodine
+          </a>
+          </div>
 
-                <td class="ni">
-                <a href="">
-                    <i class="icon-home icon-4x"></i>
-                    TBD
-                </a>
-                </td>
+          <div class="item ni">
+          <a href="tbd">
+              <i class="icon-home"></i>
+              TBD
+          </a>
+          </div>
 
-                <td class="ni">
-                <a href="">
-                    <i class="icon-home icon-4x"></i>
-                    TBD
-                </a>
-                </td>
-            </tr>
-        </table>
+          <div class="item ni">
+          <a href="tbd">
+              <i class="icon-home"></i>
+              TBD
+          </a>
+          </div>
+        </div>
+      </div>
+      <div class='content'>
+        <div class='vms'>
+        wheeeee vms
+        </div>
+
+        <div class='criticals'>
+        wheeeee criticals
+        </div>
+
+        <div class='workstations'>
+        wheeeee workstations
+        </div>
+
+        <div class='iodine'>
+        wheeeee iodine
+        </div>
+
+        <div class='tbd'>
+        wheeeee tbd
+        </div>
+      </div>
     </div>
   </body>
 </html>
