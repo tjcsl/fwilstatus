@@ -1,7 +1,8 @@
 <!doctype html>
 <html>
   <head>
-    <title>Fwilstatus</title>
+    <title>TJ CSL Status</title>
+    <meta name="description" content="A status page for the Thomas Jefferson High School for Science and Technology's Computer Systems Lab." />
     <!--link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans:100italic,400italic,700italic,100,400,700" /-->
     <link rel="stylesheet" type="text/css" href="fontawesome/css/font-awesome.css" />
     <link rel="stylesheet" type="text/css" href="base.css" />
@@ -11,16 +12,22 @@ body {
   background-color: #f0f0f0;
 }
 /* nav buttons */
-.nav-buttons {
-    display: table;
-    position: absolute;
-    // 396
-    width: 656px; height: 370px;
-    
-    left: 50%;
-    margin-left: -328px;
-    margin-top: 5%;
 
+.nav-buttons {
+  /* todo: figure out why these look so weird */
+/*  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  transition: all 0.5s ease;*/
+}
+.nav-buttons {
+  display: table;
+  position: absolute;
+  width: 656px;
+  height: 370px;
+  left: 50%;
+  margin-left: -328px;
+  margin-top: 5%;
   border: 1px solid rgb(216, 216, 216);
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
@@ -30,6 +37,39 @@ body {
   float: left;
   padding: 1px 0;
   behavior: url("/static/js/PIE/PIE.htc");
+}
+
+
+/* @media queries */
+/* large nav-buttons exp */
+@media (max-width: 670px) {
+  .nav-buttons {
+    left: 0;
+    margin-top: 50px;
+    margin-left: 0;
+    border: 0;
+  }
+}
+
+/* min nav-buttons exp */
+@media (max-width: 910px) {
+  .nav-buttons.min div.item {
+    padding: 20px 20px;
+  }
+}
+@media (max-width: 700px) {
+  .nav-buttons.min div.col {
+    display: table-row;
+  }
+
+  .nav-buttons.min div.back {
+    display: none;
+  }
+
+  div.content div {
+    top: 30%;
+    height: 70%;
+  }
 }
 
 .nav-buttons .col {
@@ -101,7 +141,7 @@ body {
 }
 
 .nav-buttons.min .col {
-  display: inline !important;
+  display: inline;
 }
 
 .nav-buttons.min .item {
@@ -119,6 +159,32 @@ body {
   height: 85%;
   padding: 0 5% 0 5%;
 }
+
+.home {
+  display: block;
+  position: absolute;
+  top: 75%;
+  left: 50%;
+  margin-left: -41px;
+  margin-top: -50px;
+  width: 100px;
+  height: 82px;
+
+  background-image: url(tjlogo-large.png);
+  background-repeat: no-repeat;
+  background-size: 100px 82px;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.home.min {
+  top: auto;
+  left: auto;
+  bottom: -10px;
+  right: -10px;
+  background-size: 75%;
+}
+
     </style>
 
     <script type="text/javascript" src="jquery.min.js"></script>
@@ -127,15 +193,34 @@ $(document).ready(function() {
   inits = {
     'vms': function() {
       console.log('do initialization here');
+      // If you want this to only run once,
+      // do something like:
+      inits.vms = null;
     }
   };
-  
+
+  chkhash = function() {
+    h = location.hash;
+    if(h.substring(0,1) == '#') h = h.substring(1);
+    if(h != '') {
+      move(h);
+      $a = $('.nav-buttons a[href='+h+']');
+      sel($a);
+    }
+  }
+
   move = function(loc) {
     $n = $('.nav-buttons');
     $c = $('.content');
+    $h = $('.home');
+    location.hash = '#' + loc;
+
+    if(typeof inits[loc] == 'function') inits[loc]();
+
     if(loc == '') {
       $n.removeClass('min');
       $c.hide();
+      $h.removeClass('min');
     } else {
       $n.addClass('min');
       $c.show();
@@ -143,8 +228,7 @@ $(document).ready(function() {
                        .hide();
       $('.content .'+loc).addClass('sel')
                          .show();
-      i = inits[loc];
-      if(typeof i == 'function') i();
+      $h.addClass('min');
     }
 
   }
@@ -154,12 +238,22 @@ $(document).ready(function() {
     $(obj).addClass('sel');
   }
 
-  $('.item a').click(function(e) {
-    loc = $(this).attr('href');
+  clk = function($t) {
+    loc = $t.attr('href');
     move(loc);
-    sel($(this));
+    sel($t);
+  }
+
+  $('.item a').click(function(e) {
+    clk($(this));
     e.preventDefault();
-  })
+  });
+  $('.home').click(function() {
+    location.href = 'https://www.tjhsst.edu';
+  });
+
+
+  chkhash();
 });
     </script>
   </head>
@@ -217,6 +311,8 @@ $(document).ready(function() {
           </div>
         </div>
       </div>
+      <div class='home'></div>
+
       <div class='content'>
         <div class='vms'>
         wheeeee vms
