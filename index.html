@@ -27,7 +27,7 @@ body {
   height: 370px;
   left: 50%;
   margin-left: -328px;
-  margin-top: 5%;
+  margin-top: 20%;
   border: 1px solid rgb(216, 216, 216);
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
@@ -66,7 +66,7 @@ body {
     display: none;
   }
 
-  div.content div {
+  div.content > div {
     top: 30%;
     height: 70%;
   }
@@ -104,6 +104,7 @@ body {
   margin-left: auto;
   margin-right: auto;
 
+
   font-size: 4em;
 }
 
@@ -117,7 +118,7 @@ body {
 
 
 .nav-buttons.min {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   margin-top: 0;
@@ -129,6 +130,10 @@ body {
   -webkit-border-radius: 0;
   -moz-border-radius: 0;
   height: 105px;
+
+  /* set background to prevent see through on scroll */
+  background: #f0f0f0;
+  z-index: 10;
 }
 
 .nav-buttons.min i {
@@ -150,10 +155,10 @@ body {
 }
 
 /* content */
-.content div {
+.content > div {
   display: none;
   position: absolute;
-  top: 25%;
+  top: 15%;
   left: 0;
   width: 90%;
   height: 85%;
@@ -162,8 +167,8 @@ body {
 
 .home {
   display: block;
-  position: absolute;
-  top: 75%;
+  position: fixed;
+  top: 15%;
   left: 50%;
   margin-left: -41px;
   margin-top: -50px;
@@ -185,19 +190,26 @@ body {
   background-size: 75%;
 }
 
+.load {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  width: 50px;
+  height: 50px;
+  z-index: 999;
+  font-size: 64px;
+
+  display: none;
+}
+
     </style>
 
     <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="prettyjson.js"></script>
     <script type="text/javascript">
+    inits = {};
 $(document).ready(function() {
-  inits = {
-    'vms': function() {
-      console.log('do initialization here');
-      // If you want this to only run once,
-      // do something like:
-      inits.vms = null;
-    }
-  };
+  
 
   chkhash = function() {
     h = location.hash;
@@ -224,9 +236,9 @@ $(document).ready(function() {
     } else {
       $n.addClass('min');
       $c.show();
-      $('.content div').removeClass('sel')
+      $('.content > div').removeClass('sel')
                        .hide();
-      $('.content .'+loc).addClass('sel')
+      $('.content > .'+loc).addClass('sel')
                          .show();
       $h.addClass('min');
     }
@@ -273,57 +285,364 @@ $(document).ready(function() {
                 VMs
             </a>
             </div>
-
-            <div class="item ip">
-            <a href="criticals">
-                <i class="icon-warning-sign"></i>
-                Criticals
-            </a>
-            </div>
-
             <div class="item ni">
             <a href="workstations">
-                <i class="icon-laptop"></i>
+                <i class="icon-desktop"></i>
                 Workstations
             </a>
             </div>
+            
+            <div class="item ip">
+          <a href="crits">
+              <i class="icon-warning-sign"></i>
+              Criticals
+          </a>
+          </div>
+            
+
         </div>
         <div class="col">
+          <div class="item ip">
+          <a href="bugs">
+              <i class="icon-bug"></i>
+              Bugs
+          </a>
+          </div>
+
           <div class="item ni">
           <a href="iodine">
-              <i class="icon-home"></i>
+              <i class="icon-globe"></i>
               Iodine
           </a>
           </div>
 
           <div class="item ni">
-          <a href="tbd">
-              <i class="icon-home"></i>
-              TBD
-          </a>
-          </div>
-
-          <div class="item ni">
-          <a href="tbd">
-              <i class="icon-home"></i>
-              TBD
+          <a href="warnings">
+              <i class="icon-info-sign"></i>
+              Warnings
           </a>
           </div>
         </div>
       </div>
       <div class='home'></div>
 
+      <div class='load'>
+        <i class='icon-spinner icon-spin'></i>
+      </div>
       <div class='content'>
+
+        
+        <script>
+        urls = {
+          'nagios': 'proxy.php?nagios=state',
+          'vmmap': 'proxy.php?vmmap'
+        };
+        fetch = {};
+        log = function(x) {
+          console.log(+new Date()+": "+x);
+        }
+        warn = function(x) {
+          $('<div>Warning: '+x+'<br /><br />Click to close</div>')
+            .click(function(){$(this).remove()})
+            .css({'position':'absolute','top':'50%','left':'50%','width':'500px','height':'250px','margin-left':'-250px','margin-top':'-125px','background-color':'#f0f0f0','font-size':'20px','text-align':'center','cursor':'pointer','z-index':'999'})
+            .appendTo($('body'));
+        }
+        save = function(n, d) {
+          fetch[n] = JSON.parse(d);
+          log('Got new result for ' + n);
+        }
+        grab = function(n, cb) {
+          $.get(urls[n], {}, function(dat) {
+            save(n, dat);
+            cb(dat);
+          });
+        }
+        start_load = function() {
+          $('.load').show();
+        }
+        finish_load = function() {
+          $('.load').hide();
+        }
+
+        sev_sort = function(w, f) {
+          r = [];
+          for(var i=0;i<w.length;i++) {
+            var s = f(w[i]);
+            if(s == 'icon-warning-sign') r.unshift(w[i]);
+            else r.push(w[i]);
+          }
+          return r;
+        }
+        </script>
+        <style>
+        /* common sidebar */
+        .sidebar {
+          position: fixed;
+          top: 15%;
+          left: 50%;
+          width: 50%;
+          height: 85%;
+          overflow-y: scroll;
+          word-wrap: break-word;
+          border-left: 1px solid rgb(216,216,216);
+          margin-top: -5px;
+        }
+
+        .sidebar > div {
+          padding: 10px;
+        }
+
+        .sidebar-title {
+          font-size: 26px;
+        }
+
+        .sidebar .stat-sidebar {
+          padding-right: 5px;
+        }
+
+        .sidebar .sidebar-json {
+          white-space: pre;
+        }
+
+        </style>
         <div class='vms'>
-        wheeeee vms
+
+
+
+
+
+
+        <script>
+        
+
+        vms = {};
+        inits.vms = vms.update = function() {
+          start_load();
+          grab('vmmap', vms.disp);
+        }
+
+        vms.disp = function() {
+
+          var r = fetch.vmmap;
+          if(typeof r == 'undefined' || Object.keys(r).length < 1) {
+            warn('Invalid data.');
+            return;
+          }
+          /* Check if the host is up. If at least one VM
+             on the host is running, we'll assume it's working. */
+          host_status = function(host) { 
+            for(var i in r[host]) if(r[host][i] == 'running') return 'icon-ok';
+            return 'icon-warning-sign';
+          }
+
+          find_vm = function(vm) {
+            for(var i in r) for(var k in r[i]) if(k == vm) return r[i][k];
+            return 'unknown';
+          }
+
+          vm_client_status = function(host, vm) {
+            if(r[host][vm] == 'running') return 'icon-ok';
+            else if(r[host][vm] == 'shut off') return 'icon-power-off';
+            else return 'icon-warning-sign';
+          }
+
+          for(i in r) {
+            var vms_div = "";
+            // add the VMs to the container
+            for(j in r[i]) {
+              vms_div += "" +
+                "<div class='vm-client " + j + " vm-" + r[i][j] + "'>" +
+                "  <i class='stat " + vm_client_status(i, j) + "'></i>" +
+                "  <span class='vm-title'>" + j + "</span>" +
+                "</div>";
+            }
+            $('.vms .resp').append(
+              "<div class='vm-host " + i + "'>" +
+              "  <i class='stat " + host_status(i) + "'></i>" +
+              "  <span class='host-title'>" + i + "</span>" +
+              "  <div class='vm-clients'>" +
+              vms_div +
+              "  </div>" +
+              "</div>"
+            );
+            log('.vm-host.'+i);
+            
+          }
+          finish_load();
+        }
+        </script>
+        <style>
+        .vms .resp {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+        }
+
+        
+
+        .vms .resp .host-title {
+          font-size: 24px;
+        }
+
+        .vms .resp .vm-clients .vm-client {
+          margin-left: 50px;
+        }
+
+        .vms .resp i {
+          font-size: 24px;
+          padding: 0 10px 0 10px;
+        }
+        .vms .resp .icon-ok { color: green; }
+        .vms .resp .icon-warning-sign,
+        .vms .resp .icon-power-off { color: red; }
+        </style>
+        <div class='resp'>
+          
+
+
         </div>
 
-        <div class='criticals'>
-        wheeeee criticals
+        <div class='sidebar'>
+          <div>
+            <span class='sidebar-title'>
+              select a vm
+            </span>
+            <br />
+            <span class='sidebar-json'>
+
+            </span>
+          </div>
+        </div>
+
+
+
+
+
+
+
+
+
+
+        </div>
+
+        <div class='crits'>
+        <script>
+        crits = {};
+        crits.list = '6509 ns1 iodine iodine-ldap www'.split(' ');
+        inits.crits = crits.update = function() {
+          start_load();
+          grab('nagios', crits.disp);
+        }
+        crits.disp = function() {
+          finish_load();
+        }
+        </script>
+        
+        <div class='resp'>
+
+
+        </div>
+
         </div>
 
         <div class='workstations'>
-        wheeeee workstations
+        <script>
+        wkstns = {};
+        wkstns.list = 'amimitl,atlaua,camaxtli,coatlicue,ehecatl,huitzilopochtli,itzli,mixcoatl,nanahuatzin,opochtli,patecatl,quetzalcoatl,teteoinnan,tlaloc,xilonen,xochiquetzal,xocotl,animal,beaker,bigbird,cookiemonster,count,ernie,gonzo,grover,fozzie,honeydew,kermit,oscar,misspiggie,rizzo,snuffleupagus,statler,swedishchef,waldorf,axiom,daedalus,defiant,destiny,discovery,eagle5,enterprise,falcon,galactica,kelvin,leonov,narada,normandy,nostromo,serenity,tantive,tardis,deadtom,boson,meson,spiritoffire,elmo'.split(',');
+        inits.workstations = wkstns.update = function() {
+          start_load();
+          grab('nagios', wkstns.disp);
+        }
+        wkstns.disp = function() {
+          finish_load();
+          var n = fetch.nagios.content;
+          var w = wkstns.list;
+
+          wkstn_status = function(i) {
+            var n = fetch.nagios.content;
+            if(n[i].current_state == "0" && n[i].current_attempt == "1") 
+              // if checked in the last half hour
+              if(parseInt(+new Date()/1000 - n[i].last_check) < 1800) 
+                return 'icon-ok';
+              else
+                return 'icon-question-sign';
+            else
+              return 'icon-warning-sign';
+          }
+
+          var w = sev_sort(wkstns.list, wkstn_status)
+          for(var i=0;i<w.length;i++) {
+            $('.workstations .resp').append(
+              "<div class='wkstn wkstn-" + w[i] + "' data-wkstn='" + w[i] + "'>" +
+              "  <i class='stat " + wkstn_status(w[i]) + "'></i>" +
+              "  <span class='wkstn-name'>" + w[i] + "</span>" +
+              "</div>"
+            )
+          }
+
+          wkstns.jquery();
+        }
+
+        wkstns.jquery = function() {
+          $('.workstations .resp .wkstn').click(function() {
+            wkstns.stat($(this).attr('data-wkstn'));
+          })
+        }
+
+        wkstns.stat = function(wkstn) {
+          var $s = $('.workstations .sidebar > div');
+          var icon = "<i class='stat-sidebar stat " + wkstn_status(wkstn) + "'></i>";
+          $('.sidebar-title', $s).html(icon + wkstn);
+          var json = fetch.nagios.content[wkstn];
+          var fjson = syntaxHighlight(json);
+          $('.sidebar-json', $s).html(fjson);
+
+        }
+        </script>
+        <style>
+
+        .workstations .resp {
+          width: 55%;
+          margin-left: -5%;
+        }
+
+        .workstations .resp .wkstn {
+          font-size: 18px;
+          padding: 10px 0 10px 0;
+          cursor: pointer;
+          /* make hover bg appear from full left */
+          padding-left: 5%;
+        }
+
+        .workstations .resp .wkstn:hover {
+          background: rgba(169,169,169,0.5);
+        }
+
+        i.stat.icon-ok { color: green; }
+        i.stat.icon-question-sign { color: orange; }
+        i.stat.icon-warning-sign { color: red; }
+
+        
+
+        </style>
+
+        <div class='resp'>
+
+        </div>
+
+        <div class='sidebar'>
+          <div>
+            <span class='sidebar-title'>
+              select a workstation
+            </span>
+            <br />
+            <span class='sidebar-json'>
+
+            </span>
+          </div>
+        </div>
+
         </div>
 
         <div class='iodine'>
