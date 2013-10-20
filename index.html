@@ -27,7 +27,7 @@ body {
   height: 370px;
   left: 50%;
   margin-left: -328px;
-  margin-top: 20%;
+  margin-top: 15%;
   border: 1px solid rgb(216, 216, 216);
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
@@ -206,6 +206,21 @@ body {
 
     <script type="text/javascript" src="jquery.min.js"></script>
     <script type="text/javascript" src="prettyjson.js"></script>
+    <!--script type="text/javascript" src=""></script-->
+    <script type="text/javascript">
+    if(location.search.indexOf('touch') != -1) {
+      $.getScript("scrollability.min.js");
+      document.addEventListener('touchstart', function(event) {
+          // Prevent text selection
+          //event.preventDefault();
+      }, false);
+
+      document.addEventListener('mousedown', function(event) {
+          // Prevent text selection
+          event.preventDefault();
+      }, false);
+    }
+    </script>
     <script type="text/javascript">
     inits = {};
 $(document).ready(function() {
@@ -357,6 +372,11 @@ $(document).ready(function() {
             cb(dat);
           });
         }
+        require = function(n, cb) {
+          if(typeof fetch[n] == 'undefined') {
+            grab(n, cb);
+          } else cb(fetch[n]);
+        }
         start_load = function() {
           $('.load').show();
         }
@@ -373,6 +393,11 @@ $(document).ready(function() {
           }
           return r;
         }
+
+        $(document).ready(function() {
+          grab('vmmap', function(){});
+          grab('nagios', function(){});
+        })
         </script>
         <style>
         /* common sidebar */
@@ -406,19 +431,13 @@ $(document).ready(function() {
 
         </style>
         <div class='vms'>
-
-
-
-
-
-
         <script>
-        
-
         vms = {};
         inits.vms = vms.update = function() {
           start_load();
-          grab('vmmap', vms.disp);
+          require('nagios', function() {
+            require('vmmap', vms.disp)
+          });
         }
 
         vms.disp = function() {
@@ -451,15 +470,17 @@ $(document).ready(function() {
             // add the VMs to the container
             for(j in r[i]) {
               vms_div += "" +
-                "<div class='vm-client " + j + " vm-" + r[i][j] + "'>" +
+                "<div class='vm-client " + j + " vm-" + r[i][j] + "' data-vm='" + j + "' data-host='" + i + "'>" +
                 "  <i class='stat " + vm_client_status(i, j) + "'></i>" +
                 "  <span class='vm-title'>" + j + "</span>" +
                 "</div>";
             }
             $('.vms .resp').append(
-              "<div class='vm-host " + i + "'>" +
-              "  <i class='stat " + host_status(i) + "'></i>" +
-              "  <span class='host-title'>" + i + "</span>" +
+              "<div class='vm-host " + i + "' data-host='" + i + "'>" +
+              "  <div class='host'>" +
+              "    <i class='stat " + host_status(i) + "'></i>" +
+              "    <span class='host-title'>" + i + "</span>" +
+              "  </div>" +
               "  <div class='vm-clients'>" +
               vms_div +
               "  </div>" +
@@ -469,6 +490,45 @@ $(document).ready(function() {
             
           }
           finish_load();
+          vms.jquery();
+        }
+
+        nagios_json = function(host, $e) {
+          var json = fetch.nagios.content[host];
+          var fjson = (typeof json == 'undefined' ? 'This system is not in Nagios.' : syntaxHighlight(json));
+          $e.html(fjson);
+        }
+        vms.statclient = function(host, vm) {
+          var $s = $('.vms .sidebar > div');
+          log(""+host+" "+vm);
+          var icon = "<i class='stat-sidebar stat " + vm_client_status(host, vm) + "'></i>";
+          $('.sidebar-title', $s).html(icon + vm + " (on " + host + ")");
+          nagios_json(vm, $('.sidebar-json', $s));
+
+        }
+
+        vms.stathost = function(host) {
+          var $s = $('.vms .sidebar > div');
+          log(""+host);
+          var icon = "<i class='stat-sidebar stat " + host_status(host) + "'></i>";
+          $('.sidebar-title', $s).html(icon + host);
+          nagios_json(host, $('.sidebar-json', $s));
+
+        }
+
+        vms.jquery = function() {
+          $('.vms .resp .vm-host .host').click(function() {
+            var n = $(this).parent().attr('data-host');
+            log(n);
+            vms.stathost(n);
+
+          });
+
+          $('.vms .resp .vm-client').click(function() {
+            var h = $(this).attr('data-host'), n = $(this).attr('data-vm');
+            log(n);
+            vms.statclient(h, n);
+          })
         }
         </script>
         <style>
@@ -476,34 +536,49 @@ $(document).ready(function() {
           position: absolute;
           top: 0;
           left: 0;
-          width: 100%;
+          width: 55%;
+          margin-left: -5%;
         }
 
-        
+        .vms .resp .vm-host {
+          /* font-size: 18px;
+          padding: 10px 0 10px 0; */
+          cursor: pointer;
+          /* make hover bg appear from full left */
+          padding-left: 10%;
+        }
+
+        .vms .resp .vm-host .host {
+          padding: 10px 0 10px 0;
+          cursor: pointer;
+          padding-left: 5%;
+        }
+
+        .vms .resp .vm-host .host:hover {
+          background: rgba(169,169,169,0.5);
+        }
 
         .vms .resp .host-title {
-          font-size: 24px;
+          font-size: 18px;
         }
 
         .vms .resp .vm-clients .vm-client {
-          margin-left: 50px;
+          margin-left: 10%;
         }
 
         .vms .resp i {
           font-size: 24px;
-          padding: 0 10px 0 10px;
+          padding: 0 10px 0 0;
         }
-        .vms .resp .icon-ok { color: green; }
-        .vms .resp .icon-warning-sign,
-        .vms .resp .icon-power-off { color: red; }
+        .stat.icon-ok { color: green; }
+        .stat.icon-warning-sign,
+        .stat.icon-power-off { color: red; }
         </style>
-        <div class='resp'>
-          
-
+        <div class='resp scrollable vertical'>
 
         </div>
 
-        <div class='sidebar'>
+        <div class='sidebar scrollable vertical'>
           <div>
             <span class='sidebar-title'>
               select a vm
@@ -515,35 +590,6 @@ $(document).ready(function() {
           </div>
         </div>
 
-
-
-
-
-
-
-
-
-
-        </div>
-
-        <div class='crits'>
-        <script>
-        crits = {};
-        crits.list = '6509 ns1 iodine iodine-ldap www'.split(' ');
-        inits.crits = crits.update = function() {
-          start_load();
-          grab('nagios', crits.disp);
-        }
-        crits.disp = function() {
-          finish_load();
-        }
-        </script>
-        
-        <div class='resp'>
-
-
-        </div>
-
         </div>
 
         <div class='workstations'>
@@ -552,7 +598,7 @@ $(document).ready(function() {
         wkstns.list = 'amimitl,atlaua,camaxtli,coatlicue,ehecatl,huitzilopochtli,itzli,mixcoatl,nanahuatzin,opochtli,patecatl,quetzalcoatl,teteoinnan,tlaloc,xilonen,xochiquetzal,xocotl,animal,beaker,bigbird,cookiemonster,count,ernie,gonzo,grover,fozzie,honeydew,kermit,oscar,misspiggie,rizzo,snuffleupagus,statler,swedishchef,waldorf,axiom,daedalus,defiant,destiny,discovery,eagle5,enterprise,falcon,galactica,kelvin,leonov,narada,normandy,nostromo,serenity,tantive,tardis,deadtom,boson,meson,spiritoffire,elmo'.split(',');
         inits.workstations = wkstns.update = function() {
           start_load();
-          grab('nagios', wkstns.disp);
+          require('nagios', wkstns.disp);
         }
         wkstns.disp = function() {
           finish_load();
@@ -627,11 +673,11 @@ $(document).ready(function() {
 
         </style>
 
-        <div class='resp'>
+        <div class='resp scrollable vertical'>
 
         </div>
 
-        <div class='sidebar'>
+        <div class='sidebar scrollable vertical'>
           <div>
             <span class='sidebar-title'>
               select a workstation
@@ -645,7 +691,108 @@ $(document).ready(function() {
 
         </div>
 
+        <div class='crits'>
+        <script>
+        crits = {};
+        crits.list = 'iodine,iodine-ldap,ltsp2,casey,smith,bottom'.split(',');
+        inits.crits = crits.update = function() {
+          start_load();
+          require('nagios', crits.disp);
+        }
+        crits.disp = function() {
+          finish_load();
+          var n = fetch.nagios.content;
+          var w = crits.list;
+
+          wkstn_status = function(i) {
+            var n = fetch.nagios.content;
+            if(n[i].current_state == "0" && n[i].current_attempt == "1") 
+              // if checked in the last half hour
+              if(parseInt(+new Date()/1000 - n[i].last_check) < 1800) 
+                return 'icon-ok';
+              else
+                return 'icon-question-sign';
+            else
+              return 'icon-warning-sign';
+          }
+
+          var w = sev_sort(crits.list, wkstn_status)
+          for(var i=0;i<w.length;i++) {
+            $('.crits .resp').append(
+              "<div class='wkstn wkstn-" + w[i] + "' data-wkstn='" + w[i] + "'>" +
+              "  <i class='stat " + wkstn_status(w[i]) + "'></i>" +
+              "  <span class='wkstn-name'>" + w[i] + "</span>" +
+              "</div>"
+            )
+          }
+
+          crits.jquery();
+        }
+
+        crits.jquery = function() {
+          $('.crits .resp .wkstn').click(function() {
+            crits.stat($(this).attr('data-wkstn'));
+          })
+        }
+
+        crits.stat = function(wkstn) {
+          var $s = $('.crits .sidebar > div');
+          var icon = "<i class='stat-sidebar stat " + wkstn_status(wkstn) + "'></i>";
+          $('.sidebar-title', $s).html(icon + wkstn);
+          var json = fetch.nagios.content[wkstn];
+          var fjson = syntaxHighlight(json);
+          $('.sidebar-json', $s).html(fjson);
+
+        }
+        </script>
+        <style>
+
+        .crits .resp {
+          width: 55%;
+          margin-left: -5%;
+        }
+
+        .crits .resp .wkstn {
+          font-size: 18px;
+          padding: 10px 0 10px 0;
+          cursor: pointer;
+          /* make hover bg appear from full left */
+          padding-left: 5%;
+        }
+
+        .crits .resp .wkstn:hover {
+          background: rgba(169,169,169,0.5);
+        }
+
+        i.stat.icon-ok { color: green; }
+        i.stat.icon-question-sign { color: orange; }
+        i.stat.icon-warning-sign { color: red; }
+
+        
+
+        </style>
+
+        <div class='resp scrollable vertical'>
+
+        </div>
+
+        <div class='sidebar scrollable vertical'>
+          <div>
+            <span class='sidebar-title'>
+              select a system
+            </span>
+            <br />
+            <span class='sidebar-json'>
+
+            </span>
+          </div>
+        </div>
+
+        </div>
+
         <div class='iodine'>
+        <script type='text/javascript'>
+        </script>
         wheeeee iodine
         </div>
 
